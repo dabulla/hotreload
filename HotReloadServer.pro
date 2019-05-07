@@ -26,6 +26,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 DISTFILES += \
     testapp/main.qml \
     testapp/TestApplication.qml \
-    testapp/qmldir \
     testapp/AppStatePersistent.qml \
-    testapp/AppState.qml
+    testapp/AppState.qml \
+    testapp/qmldir.inactive

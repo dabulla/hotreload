@@ -26,7 +26,7 @@
 class HotReloadServer {
 public:
     QString versionPath() {
-        qDebug() << "DBG: Server URL" << m_updateNotifyServer->serverUrl().toString();
+        qDebug() << "Server URL" << m_updateNotifyServer->serverUrl().toString();
         QString versionDir(":");
         versionDir.append(QString::number(m_directoryFileServer->serverPort()));
         versionDir.append("/v");
@@ -34,20 +34,34 @@ public:
         versionDir.append("/");
         return versionDir;
     }
-    void addPathRecursively(QString path) {
-
+    bool addPath(QString path) {
         bool watching = m_watcher->addPath(path);
         if(watching) {
             qDebug() << "Watchdog watching:" << path;
+            return true;
         } else {
             qDebug() << "Error: Cannot watch " << path;
-            return;
+            return false;
         }
-        QDir dir(path);
-        QStringList subdirs = dir.entryList(QDir::AllDirs|QDir::NoDotAndDotDot);
-        for(auto iter = subdirs.cbegin(); iter != subdirs.cend() ; ++iter) {
-            addPathRecursively(*iter);
+    }
+    bool addPathRecursively(QString path) {
+        QFileInfo fi(path);
+        bool wasAdded = false;
+        if(fi.isFile()) {
+            if(!m_watcher->files().contains(path)) {
+                wasAdded = addPath(path);
+            }
+        } else if(fi.isDir()) {
+            if(!m_watcher->directories().contains(path)) {
+                wasAdded = addPath(path);
+                QDir dir(path);
+                QStringList subdirsAndFiles = dir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot);
+                for(auto iter = subdirsAndFiles.cbegin(); iter != subdirsAndFiles.cend() ; ++iter) {
+                    addPathRecursively(dir.filePath(*iter));
+                }
+            }
         }
+        return wasAdded;
     }
     // reloadDely: If initializing qml takes long, make sure it is only reloaded once. Watchdog my fire multiple times
     // which results in multiple reloads if reloadDelay is too short. 500ms seems okay for QtCreator. 50ms if reloading qml multiple times is okay!
@@ -76,6 +90,14 @@ public:
         addPathRecursively(m_currentDirectoryInfo.canonicalFilePath());
 
         QObject::connect(m_watcher, &QFileSystemWatcher::directoryChanged, [this](const QString &path) {
+            if (!m_changes.contains(path)) {
+                qDebug() << "Changes detected: " << path;
+            }
+            m_changes.insert(path);
+            m_timer->start();
+            this->addPathRecursively(path);
+        });
+        QObject::connect(m_watcher, &QFileSystemWatcher::fileChanged, [this](const QString &path) {
             if (!m_changes.contains(path)) {
                 qDebug() << "Changes detected: " << path;
             }
@@ -121,7 +143,8 @@ public:
                         int pos = regexp.indexIn(webBrowerRXData);
                         //qDebug() << ":" << webBrowerRXData;
                         if (pos > -1) {
-                            qDebug() << "requested version:" << regexp.cap(2) << "path:" << regexp.cap(3);
+                            QFileInfo fileInfo(m_currentDirectoryInfo.filePath() + "/" + regexp.cap(3));
+                            qDebug() << "requested version:" << regexp.cap(2) << "path:" << regexp.cap(3) << "(" << fileInfo.filePath() << ")";
                             requestedPath = regexp.cap(3);
                         }
                     }
@@ -140,11 +163,26 @@ public:
                             qDebug() << "Tell client Watchdog Server:" << url;
                             socket->write(url.toLatin1(), url.length());
                         } else {
-                            QFileInfo fileInfo("./" + requestedPath);
+                            QFileInfo fileInfo(m_currentDirectoryInfo.filePath() + "/" + requestedPath);
                             if(!fileInfo.exists()) {
-                                qDebug() << "File does not exist";
+                                if(fileInfo.fileName() != "qmldir") {
+                                    qDebug() << "File does not exist (" + fileInfo.filePath() + ")";
+                                } else {
+                                    // emulate qmldir file from directory. Only if no qmldir-file exists!
+                                    QDir dir(fileInfo.dir());
+                                    QStringList filters;
+                                    filters << "*.qml";
+                                    dir.setNameFilters(filters);
+                                    QStringList files(dir.entryList(QDir::Files));
+                                    QString qmlDirFileString;
+                                    for(int i=0 ; i < files.length() ; ++i) {
+                                        qmlDirFileString.append(QFileInfo(files[i]).baseName() + " 1.0 " + files[i] + "\n");
+                                    }
+                                    socket->write(qmlDirFileString.toLatin1(), qmlDirFileString.length());
+                                    qDebug() << "qmldir generated";
+                                }
                             } else {
-                                qDebug() << "absolute file path:" << fileInfo.canonicalFilePath();
+                                //qDebug() << "absolute file path:" << fileInfo.canonicalFilePath();
                                 if(!fileInfo.canonicalFilePath().startsWith(m_currentDirectoryInfo.canonicalPath())) {
                                     qDebug() << "File not a subdirectory";
                                 } else if(!fileInfo.isFile()) {
@@ -195,8 +233,14 @@ int main(int argc, char *argv[])
         dir = argv[1];
     }
     HotReloadServer server(dir);
+    QQmlApplicationEngine *engine;
+    if(argc >= 3) {
+        QString startScript = argv[2];
+        QDir path(dir);
+        startScript = path.filePath(startScript);
+        engine = new QQmlApplicationEngine( &a );
+        engine->load(startScript);
+    }
 
-    QQmlApplicationEngine engine;
-    engine.load(QUrl(QStringLiteral("./main.qml")));
     return a.exec();
 }
