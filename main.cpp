@@ -23,6 +23,26 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 
+#include <QCommandLineParser>
+
+//// HotReloadServer is the Cpp part for Hot Code Reloading.
+/// Copy paste it to your application or put it
+/// as a seperate class. This way you can use your custom Cpp-Application
+/// with the benefits of hot code reloading.
+/// It will not be part of your production
+/// release, so you can put an #ifdef aroudn it
+/// feel free to add caching and client update features
+/// for procution.
+///
+/// HotReloadServer consists of a minimal Http-Server and a WebSocket Server
+/// Your app is loaded over http. HotReloadServer watches for file changes
+/// on the specified folder. When a change occurrs it notifies your app
+/// about it via websocket and tells a new URL to relaod the App.
+/// The App does not reload completely, it has the chance to carry over
+/// e.g. the application-state. Qml Propertybindings do the rest of the magic.
+/// In the Testapp you find a template for ApplicationState, that also serializes
+/// and reloads when the application closes.
+
 class HotReloadServer {
 public:
     QString versionPath() {
@@ -223,19 +243,37 @@ private:
     QTcpServer         *m_directoryFileServer;
 };
 
+
+//// Command line tool
 int main(int argc, char *argv[])
 {
-    //QCoreApplication a(argc, argv);
     QGuiApplication a(argc, argv);
+    QCoreApplication::setApplicationName("hotreloadserver");
+    QCoreApplication::setApplicationVersion("1.0");
 
+    QCommandLineParser parser;
+    parser.setApplicationDescription("Hot Reload Server");
+    QCommandLineOption helpOption = parser.addHelpOption();
+    QCommandLineOption versionOption = parser.addVersionOption();
+    parser.addPositionalArgument("watchdir", QCoreApplication::translate("main", "Directory to watch for changes. Usualy your qml root dir."));
+    parser.addPositionalArgument("startscript", QCoreApplication::translate("main", "Optional root Qml file, relative to <watchdir>. If no script is given only the server is started. Note: Use the Hot Reload Server Qml Template for this file."));
+
+    parser.process(a);
+
+    if(parser.isSet(helpOption)) {
+        parser.showHelp();
+    }
+    if(parser.isSet(versionOption)) {
+        parser.showHelp();
+    }
     QString dir(".");
-    if(argc >= 2) {
-        dir = argv[1];
+    if(parser.positionalArguments().length() >= 1) {
+        dir = parser.positionalArguments().at(0);
     }
     HotReloadServer server(dir);
     QQmlApplicationEngine *engine;
-    if(argc >= 3) {
-        QString startScript = argv[2];
+    if(parser.positionalArguments().length() >= 2) {
+        QString startScript = parser.positionalArguments().at(1);
         QDir path(dir);
         startScript = path.filePath(startScript);
         engine = new QQmlApplicationEngine( &a );
