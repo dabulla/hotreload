@@ -66,6 +66,8 @@ public:
     }
     bool addPathRecursively(QString path) {
         QFileInfo fi(path);
+        if(m_skipDirs.contains(fi.canonicalFilePath()))
+            return false;
         bool wasAdded = false;
         if(fi.isFile()) {
             if(!m_watcher->files().contains(path)) {
@@ -85,14 +87,18 @@ public:
     }
     // reloadDely: If initializing qml takes long, make sure it is only reloaded once. Watchdog my fire multiple times
     // which results in multiple reloads if reloadDelay is too short. 500ms seems okay for QtCreator. 50ms if reloading qml multiple times is okay!
-    HotReloadServer(QString dir, quint16 watchdogPort = 8080, quint16 updateNotifierPort = 8081, int reloadDelay = 50)
+    HotReloadServer(QString dir, QStringList skipDirs, quint16 watchdogPort = 8080, quint16 updateNotifierPort = 8081, int reloadDelay = 50)
         :m_currentVersion(0)
         ,m_currentDirectoryInfo(dir)
+        ,m_skipDirs(skipDirs)
         ,m_timer(new QTimer())
         ,m_watcher(new QFileSystemWatcher())
         ,m_updateNotifyServer(new QWebSocketServer("Watchdog update notifier", QWebSocketServer::NonSecureMode))
         ,m_directoryFileServer(new QTcpServer())
     {
+        for(auto iter = skipDirs.cbegin() ; iter != skipDirs.cend() ; ++iter) {
+            m_skipDirs.append(QFileInfo(*iter).canonicalFilePath());
+        }
         ////// start watchdog and a timer collecting changes and fires once
         m_timer->setInterval(reloadDelay);
         m_timer->setTimerType(Qt::VeryCoarseTimer);
@@ -236,6 +242,7 @@ private:
     // This way Qml Component cache knows about new versions
     int                 m_currentVersion;
     QFileInfo           m_currentDirectoryInfo;
+    QStringList         m_skipDirs;
     QSet<QString>       m_changes;
     QTimer             *m_timer;
     QFileSystemWatcher *m_watcher;
@@ -257,7 +264,8 @@ int main(int argc, char *argv[])
     QCommandLineOption versionOption = parser.addVersionOption();
     parser.addPositionalArgument("watchdir", QCoreApplication::translate("main", "Directory to watch for changes. Usualy your qml root dir."));
     parser.addPositionalArgument("startscript", QCoreApplication::translate("main", "Optional root Qml file, relative to <watchdir>. If no script is given only the server is started. Note: Use the Hot Reload Server Qml Template for this file."));
-
+    QCommandLineOption skip({{"skip","s"}, "Directories that should not be watched, seperated by ';'", "dirs"});
+    parser.addOption(skip);
     parser.process(a);
 
     if(parser.isSet(helpOption)) {
@@ -267,10 +275,14 @@ int main(int argc, char *argv[])
         parser.showHelp();
     }
     QString dir(".");
+    QStringList skipDirs;
     if(parser.positionalArguments().length() >= 1) {
         dir = parser.positionalArguments().at(0);
     }
-    HotReloadServer server(dir);
+    if(parser.isSet(skip)) {
+        skipDirs = parser.value(skip).split(";");
+    }
+    HotReloadServer server(dir, skipDirs);
     QQmlApplicationEngine *engine;
     if(parser.positionalArguments().length() >= 2) {
         QString startScript = parser.positionalArguments().at(1);

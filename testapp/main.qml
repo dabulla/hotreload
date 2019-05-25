@@ -3,6 +3,13 @@ import QtQuick.Controls 2.5
 import QtQuick.Layouts 1.3
 import QtWebSockets 1.0
 
+// This is a boilerplate-qml that displays connection information at the top
+// to connect to a hot reload server. "TestApplication.qml" is reloaded whenever the server
+// tells the template about a change.
+// This boilerplate is not realoded and will persist. Thus it can be used to restore
+// application state after a reload.
+// The property "appState" of "TestApplication" is tracked and carried over this way.
+
 ApplicationWindow {
     id: window
     visible: true

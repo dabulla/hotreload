@@ -44,9 +44,10 @@ Item {
                 onTextChanged: appStatePersist.login = text
             }
         }
+//        Label {
+//            width: parent.width
+//            horizontalAlignment: Qt.AlignHCenter
+//            text: appStatePersist.login
+//        }
     }
-//    Rectangle {
-//        anchors.fill: parent
-//        color: "red"
-//    }
 }
