@@ -40,7 +40,7 @@
 
 class StatefulHotReloadServer {
 public:
-    // This is what the client needs to know to connect
+    // This is what the client needs to know to reload
     // contains everything except for ip, which is already known
     QString versionPath() {
         qDebug() << "Server URL" << m_updateNotifyServer->serverUrl().toString();
@@ -160,10 +160,10 @@ public:
                 QObject::connect(socket, &QTcpSocket::disconnected, socket, &QObject::deleteLater);
                 QObject::connect(socket, &QTcpSocket::readyRead, [socket, this](){
                     QString requestedPath;
-                    char webBrowerRXData[3000];
+                    char webBrowserRXData[3000];
                     QRegExp regexp("GET (/?v(\\d+)/)?(.*) HTTP/.*");
-                    while(0 < socket->readLine(webBrowerRXData, 3000)) {
-                        int pos = regexp.indexIn(webBrowerRXData);
+                    while(0 < socket->readLine(webBrowserRXData, 3000)) {
+                        int pos = regexp.indexIn(webBrowserRXData);
                         //qDebug() << ":" << webBrowerRXData;
                         if (pos > -1) {
                             QFileInfo fileInfo(m_currentDirectoryInfo.filePath() + "/" + regexp.cap(3));

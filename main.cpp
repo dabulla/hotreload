@@ -7,6 +7,7 @@
 #include <QCommandLineParser>
 
 #include "statefulhotreloadserver.h"
+#include "localapplicationcachefactory.h"
 
 //// Command line tool
 int main(int argc, char *argv[])
@@ -41,11 +42,14 @@ int main(int argc, char *argv[])
     }
     StatefulHotReloadServer server(dir, skipDirs);
     QQmlApplicationEngine *engine;
+
+    LocalApplicationCacheFactory cacheFactory;
     if(parser.positionalArguments().length() >= 2) {
         QString startScript = parser.positionalArguments().at(1);
         QDir path(dir);
         startScript = path.filePath(startScript);
         engine = new QQmlApplicationEngine( &a );
+        engine->setNetworkAccessManagerFactory(&cacheFactory);
 
         //engine->addImportPath(QDir::currentPath()+"/hotlivereload");
         engine->load(startScript);

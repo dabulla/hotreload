@@ -37,7 +37,7 @@ Item {
         active: root.enableLiveReload
         url: "ws://"+ root.host + ":" + root.port
         property string versionPath//: "v0"
-        property string rootUrl: "http://" + root.host + versionPath
+        property string rootUrl: "cachedhttp://" + root.host + versionPath
         onTextMessageReceived: {
             console.log("Reloading from url: " + message)
             versionPath = message
