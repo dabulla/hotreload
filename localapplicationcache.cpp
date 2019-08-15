@@ -36,10 +36,10 @@ QNetworkReply *LocalApplicationCache::createRequest(QNetworkAccessManager::Opera
 {
     QUrl url(request.url());
     QString scheme( url.scheme() );
-    if( scheme.startsWith("cachedhttp")) {
+    if( scheme.startsWith("cached")) {
         QNetworkRequest newRequest(request);
         QUrl urlHttp(request.url());
-        urlHttp.setScheme("http");
+        urlHttp.setScheme(scheme.remove(0, 6));
         newRequest.setUrl(urlHttp);
         QString fileInCache = tryGetCacheFile(url);
 

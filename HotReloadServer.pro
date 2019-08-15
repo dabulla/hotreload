@@ -32,6 +32,7 @@ DISTFILES += \
     hotlivereload/HotLiveReloadUrlInput.qml \
     hotlivereload/HotLiveReloader.qml \
     testapp/AnimatedEntity.qml \
+    testapp/Versions.qml \
     testapp/main.qml \
     testapp/TestApplication.qml \
     testapp/AppState.qml \

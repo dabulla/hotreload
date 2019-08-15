@@ -15,52 +15,111 @@ Item {
     }
 
     property string text: "Button has been pressed " + appState.timesPressed + " times! (total " + appStatePersist.timesPressedTotal + ")"
-    Column {
-        spacing: 20
-        anchors.centerIn: parent
-        Text {
-            id: textLabel
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: root.text
-            font.pixelSize: 20
-        }
-
-        Button {
-            id: button
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: "+1"
-            onClicked: {
-                appState.timesPressed++
-                appStatePersist.timesPressedTotal++
+    SwipeView {
+        id: swipeView
+        anchors.fill: parent
+        currentIndex: appState.currentPage
+        onCurrentIndexChanged: appState.currentPage = currentIndex
+        Column {
+            spacing: 20
+            Text {
+                id: textLabel
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: root.text
+                font.pixelSize: 20
             }
-        }
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter
+
+            Button {
+                id: button
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "+1"
+                onClicked: {
+                    appState.timesPressed++
+                    appStatePersist.timesPressedTotal++
+                }
+            }
+            Row {
+                anchors.horizontalCenter: parent.horizontalCenter
+                Label {
+                    anchors.verticalCenter: textField.verticalCenter
+                    text: "Name: "
+                }
+                TextField {
+                    id: textField
+                    width: 230
+                    text: appStatePersist.login
+                    onTextChanged: appStatePersist.login = text
+                }
+            }
             Label {
-                anchors.verticalCenter: textField.verticalCenter
-                text: "Name: "
-            }
-            TextField {
-                id: textField
-                width: 230
+                width: parent.width
+                horizontalAlignment: Qt.AlignHCenter
                 text: appStatePersist.login
-                onTextChanged: appStatePersist.login = text
+            }
+    //        Scene3D {
+    //            id:scene3d
+    //            width: 200//parent.width
+    //            height: 200
+    //            focus: true
+    //            aspects: ["input", "logic"]
+    //            cameraAspectRatioMode: Scene3D.AutomaticAspectRatio
+
+    //            AnimatedEntity {}
+    //        }
+        }
+        Item {
+            Column {
+                anchors.fill: parent
+                anchors.leftMargin: 20
+                spacing: 50
+                Item { height: 5; width: 1 }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "Available Versions"
+                    font.pixelSize: 30
+                }
+
+                Repeater {
+                    model: liveReloader.versions
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        height: versionContentColumn.height
+                        Column {
+                            id: versionContentColumn
+                            Text { text: modelData.name }
+                            Text { text: modelData.version.versionName }
+                            Button {
+                                text: "Download"
+                                onClicked: {
+                                    liveReloader.enableLiveReload = false
+                                    liveReloader.host     = modelData.version.host
+                                    liveReloader.protocol = modelData.version.protocol
+                                    liveReloader.folder   = modelData.version.folder
+                                    liveReloader.rootFile = modelData.version.rootFile
+                                }
+                            }
+                        }
+                    }
+                }
+                Item { height: 5; width: 1 }
+                Button {
+                    text: "Live Reload"
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    onClicked: {
+                        liveReloader.enableLiveReload = true
+                    }
+                }
             }
         }
-        Label {
-            width: parent.width
-            horizontalAlignment: Qt.AlignHCenter
-            text: appStatePersist.login
-        }
-//        Scene3D {
-//            id:scene3d
-//            width: 200//parent.width
-//            height: 200
-//            focus: true
-//            aspects: ["input", "logic"]
-//            cameraAspectRatioMode: Scene3D.AutomaticAspectRatio
+    }
+    PageIndicator {
+        id: indicator
 
-//            AnimatedEntity {}
-//        }
+        count: swipeView.count
+        currentIndex: swipeView.currentIndex
+
+        anchors.bottom: swipeView.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
     }
 }
