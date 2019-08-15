@@ -1,31 +1,22 @@
 import QtQuick 2.0
-import Qt.labs.settings 1.0
 import QtQuick.LocalStorage 2.12
 
 Item {
     // here should be no bindings because these will be overwritten
-    // everything with bindings/computed should stay somewhere else (e.g. appStyle)
+    // everything with bindings/computed should stay somewhere else (e.g. appSTYLE)
     id: appStatePersist
 
-    property string applicationName: "TestApp"
-    property int timesPressedTotal: 0
-    property string login: "initial name"
+    property string applicationName
 
     Item {
-        //TODO: needed?
         property string applicationName
         id: nonSerializedPropNames
-    }
-
-    Settings {
-        id: settings
     }
     Item {
         property var db: LocalStorage.openDatabaseSync(appStatePersist.applicationName, "1.0", "The Settings of the App", 10000)
         function createConnection(propertyName) {
             var sig = appStatePersist["on" + propertyName[0].toUpperCase() + propertyName.substring(1) + "Changed"];
             if(typeof sig !== "undefined") {
-                var stings = settings;
                 sig.connect(function(value) {
                     db.transaction( function(tx) {
                         var result = tx.executeSql('UPDATE Settings SET key=?, value=? where key = ?', [propertyName, JSON.stringify(appStatePersist[propertyName]), propertyName])

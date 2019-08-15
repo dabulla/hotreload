@@ -1,5 +1,5 @@
 #QT -= gui
-QT += gui network qml quick quickcontrols2 websockets
+QT += gui network qml quick quickcontrols2 websockets 3dcore 3drender 3dinput 3dlogic 3dextras 3danimation
 
 CONFIG += c++11 console
 CONFIG -= app_bundle
@@ -16,7 +16,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-        main.cpp
+        main.cpp \
+        statefulhotreloadserver.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -24,8 +25,14 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 DISTFILES += \
+    hotlivereload/AppStatePersistent.qml \
+    hotlivereload/HotLiveReloadUrlInput.qml \
+    hotlivereload/HotLiveReloader.qml \
+    testapp/AnimatedEntity.qml \
     testapp/main.qml \
     testapp/TestApplication.qml \
-    testapp/AppStatePersistent.qml \
     testapp/AppState.qml \
     testapp/qmldir.inactive
+
+HEADERS += \
+    statefulhotreloadserver.h
