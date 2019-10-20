@@ -93,6 +93,12 @@ public:
         ,m_updateNotifyServer(new QWebSocketServer("Watchdog update notifier", QWebSocketServer::NonSecureMode))
         ,m_directoryFileServer(new QTcpServer())
     {
+        bool supportSsl = QSslSocket::supportsSsl();
+        if(!supportSsl) {
+            qDebug() << "No Ssl support!";
+            QString sslLib = QSslSocket::sslLibraryBuildVersionString();
+            qDebug() << "Please download and install OpenSSL (version info:" << sslLib << ")";
+        }
         for(auto iter = skipDirs.cbegin() ; iter != skipDirs.cend() ; ++iter) {
             m_skipDirs.append(QFileInfo(*iter).canonicalFilePath());
         }
@@ -161,23 +167,14 @@ public:
                 QObject::connect(socket, &QTcpSocket::readyRead, [socket, this](){
                     QString requestedPath;
                     char webBrowserRXData[3000];
-                    QRegExp regexpGet("GET (.*) HTTP/.*");
+                    QRegExp regexp("GET (/?v(\\d+)/)?(.*) HTTP/.*");
                     while(0 < socket->readLine(webBrowserRXData, 3000)) {
-                        int pos = regexpGet.indexIn(webBrowserRXData);
+                        int pos = regexp.indexIn(webBrowserRXData);
+                        //qDebug() << ":" << webBrowerRXData;
                         if (pos > -1) {
-                            QRegExp regexp("GET (/?v(\\d+)/)?(.*) HTTP/.*");
-                            int pos = regexp.indexIn(webBrowserRXData);
-                            if (pos > -1) {
-                                QFileInfo fileInfo(m_currentDirectoryInfo.filePath() + "/" + regexp.cap(3));
-                                qDebug() << "requested version:" << regexp.cap(2) << "path:" << regexp.cap(3) << "(" << fileInfo.filePath() << ")";
-                                requestedPath = regexp.cap(3);
-                                break;
-                            } else {
-                                QFileInfo fileInfo(m_currentDirectoryInfo.filePath() + "/" + regexp.cap(1));
-                                qDebug() << "requested static content: patch" << regexpGet.cap(1) << "(" << fileInfo.filePath() << ")";
-                                requestedPath = regexp.cap(1);
-                                break;
-                            }
+                            QFileInfo fileInfo(m_currentDirectoryInfo.filePath() + "/" + regexp.cap(3));
+                            qDebug() << "requested version:" << regexp.cap(2) << "path:" << regexp.cap(3) << "(" << fileInfo.filePath() << ")";
+                            requestedPath = regexp.cap(3);
                         }
                     }
 
@@ -229,6 +226,8 @@ public:
                                 }
                             }
                         }
+                    } else {
+                        qDebug() << "Http header could not be parsed, no GET?";
                     }
                     socket->flush();
                     socket->disconnectFromHost();

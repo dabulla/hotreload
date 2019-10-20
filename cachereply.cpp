@@ -40,16 +40,15 @@ void CacheReply::cacheAndFinish()
         dir.cdUp();
         if(!dir.mkpath(".")) {
             qDebug() << "Could not create parent directory for cache.";
-            return;
         }
         QFile file(m_cacheFilePath);
         file.open(QIODevice::WriteOnly);
+        QByteArray memory = m_reply->readAll();
         if(!file.isWritable()) {
             qDebug() << "Could not write cache file.";
-            return;
+        } else {
+            file.write(memory);
         }
-        QByteArray memory = m_reply->readAll();
-        file.write(memory);
         this->open(QIODevice::ReadWrite | QIODevice::Unbuffered);
         this->write(memory);
         //this->close();
@@ -58,10 +57,8 @@ void CacheReply::cacheAndFinish()
             QFile requestedFileInCache(m_cacheFilePath);
             if(!requestedFileInCache.exists()) {
                 qDebug() << "Cannot reach network and no fallback version exists";
-                return;
             } else if(!requestedFileInCache.open(QIODevice::ReadOnly)) {
                 qDebug() << "Cannot reach network and fallback cannot be read";
-                return;
             }
             this->open(QIODevice::ReadWrite | QIODevice::Unbuffered);
             this->write(requestedFileInCache.readAll());

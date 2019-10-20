@@ -70,7 +70,7 @@ Item {
         id: verPublic
         property int versionNumber: 50
         property string versionName: "public"
-        property string protocol: "http://"
+        property string protocol: "https://"
         property string host: "raw.githubusercontent.com"
         //property string port: "443"
         property string folder: "dabulla/hotreload/master/testapp/"
