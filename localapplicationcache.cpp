@@ -13,7 +13,9 @@ QString tryGetCacheFile(const QUrl &url) {
     QDir dirLatest(pathLatest);
     if(!dirLatest.mkpath(".")) {
         qDebug() << "Could not create cache dir (" << dirLatest << ")";
+        return "";
     }
+    // remove version part in Urls. E.g. the /v234/ in 'myhost.com/v234/thefile.qml'
     QRegExp regexp("(/?v(\\d+)/)?(.*)");
     QString pathRequest = url.path();
     int pos = regexp.indexIn(pathRequest);
@@ -21,6 +23,7 @@ QString tryGetCacheFile(const QUrl &url) {
         foundFile = dirLatest.canonicalPath() + "/" + regexp.cap(3);
     } else {
         qDebug() << "unknown request url format for Stateful Hot Reload";
+        return "";
     }
     return foundFile;
 }
@@ -55,23 +58,5 @@ QNetworkReply *LocalApplicationCache::createRequest(QNetworkAccessManager::Opera
 
 void LocalApplicationCache::cacheReply(QNetworkReply *reply)
 {
-//    QString cacheFileName = tryGetCacheFile(reply->url());
-//    if(cacheFileName.isEmpty()) {
-//        qDebug() << "Could not cache reply";
-//    }
-//    QDir dir(cacheFileName);
-//    dir.cdUp();
-//    if(!dir.mkpath(".")) {
-//        qDebug() << "Could not create parent directory for cache.";
-//    }
-//    QFile file(cacheFileName);
-//    file.open(QIODevice::WriteOnly);
-//    if(!file.isWritable()) {
-//        qDebug() << "Could not write cache file.";
-//    }
-//    QByteArray memory = reply->readAll();
-//    file.write(memory);
-//    reply->set(memory);
-//    reply->seek(0);
     qDebug() << "REPLY: " << reply->url();
 }

@@ -9,7 +9,7 @@ Item {
     property HotLiveReloader liveReloader
 
     anchors.fill: parent
-    visible: liveReloader.enableLiveReload
+    visible: liveReloader.operationMode === HotLiveReloader.ReloadMode.LiveReload
              && liveReloader.status !== WebSocket.Open
              //&& liveReload.status !== WebSocket.Connecting
     z: 100

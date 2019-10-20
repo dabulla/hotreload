@@ -14,7 +14,7 @@ Item {
         id: appState
     }
 
-    property string text: "Button has been pressed " + appState.timesPressed + " times! (total " + appStatePersist.timesPressedTotal + ")"
+    property string text: "Hello from Beat Channel!\nButton has been pressed " + appState.timesPressed + " times! (total " + appStatePersist.timesPressedTotal + ")"
     SwipeView {
         id: swipeView
         anchors.fill: parent
@@ -42,7 +42,7 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 Label {
                     anchors.verticalCenter: textField.verticalCenter
-                    text: "Name: "
+                    text: "Betaname: "
                 }
                 TextField {
                     id: textField

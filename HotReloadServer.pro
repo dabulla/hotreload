@@ -22,6 +22,8 @@ SOURCES += \
         main.cpp \
         statefulhotreloadserver.cpp
 
+OTHER_FILES += README.md
+
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
@@ -35,8 +37,9 @@ DISTFILES += \
     testapp/Versions.qml \
     testapp/main.qml \
     testapp/TestApplication.qml \
+    testapp/betachannel_version/TestApplication.qml \
     testapp/AppState.qml \
-    testapp/qmldir.inactive
+    testapp/qmldir
 
 HEADERS += \
     cachereply.h \

@@ -13,6 +13,9 @@ Testing and iterating fast over your qml app is possible using tools like [QmlLi
 However the most tools are standalone applications and lack of support for custom C++ parts of your application.
 For example if you have a custom imageprovider, this cannot be used with most tools.
 Additionally this template adds persistence of appstate and testing over network.
+Recently it is also possible to cache versions. This means after a successful develpment
+session you still have the latest version on your device without a full (apk) deployment.
+This mechanism can be used to roll out updates to beta-channels of your application.
 
 # How to use
 To quickly test this app/template/boilerplate and have an overview you can use it as a commandlinetool.
@@ -35,8 +38,27 @@ My items use `LocalStorage` instead, which worked better for me on Windows/Andro
 
 For the very lowest entry barrier:
 
-Just Copy/Paste the class "HotReloadServer" from main.cpp and instantiate it.
+Just add the line
+```
+StatefulHotReloadServer server(dir, skipDirs);
+```
+to your code and copy the class to your application. I'm working on making it available as a submodule without much hassle.
 Use the "main.qml" from testapp as a new entrypoint for `QQmlApplicationEngine::load(...)`. Enter your old root-Qml file in liveReloadRoot.rootFile.
 
 Start your application...
 
+
+# How does it work
+
+`StatefulHotReloadServer` starts two webservers. The first one delivers your Qml directory via Http. The second server sendes Websocket signals whenever
+a file changes. On the Qmlside the root element is reloaded (Url is changed slighly to avoid caching between versions).
+Before the Qml element is exchanged, it's property 'appState' is saved and afterwards it is restored.
+
+# How does it work (and more advanced features)
+
+There is a `QNetworkAccessManager` That listens to protocols starting with 'cached'. It then looks to a directory for a cached version
+of the requested file while starting a network request. If the network request was successful, the cached file is rewritten. If not, the cached file is returned.
+The cache only has one version at this moment and files are never deleted. So it can happen, that multiple versions get mixed in the worst case,
+it should work for most common cases.
+Optional: There should be a "Versions.qml" in the project root if you want to be able to switch to different
+development channels (E.g. github master and github stable versions of your app)

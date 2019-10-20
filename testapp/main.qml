@@ -27,6 +27,8 @@ ApplicationWindow {
         applicationName: "TestApp"
         property int timesPressedTotal: 0
         property string login: "initial name"
+        property string currentUpdateChannel
+        property string currentVersion
     }
     HotLiveReloader {
         id: liveReloader
@@ -34,9 +36,15 @@ ApplicationWindow {
         anchors.fill: parent
         rootFile: "TestApplication.qml"
 
-        enableLiveReload: true
+        operationMode: HotLiveReloader.ReloadMode.LiveReload
         fallback: Component {
             TestApplication {}
+        }
+        currentChannel: appStatePersist.currentUpdateChannel
+        onCurrentChannelChanged: {
+            console.log("Switched to channel " + currentChannel + " from " + appStatePersist.currentUpdateChannel)
+            appStatePersist.currentUpdateChannel = currentChannel
+            //appStatePersist.currentVersion = channelByName[currentChannel].versionName
         }
     }
     HotLiveReloadUrlInput {

@@ -1,2 +1,3 @@
 AppState 1.0 AppState.qml
 AppStatePersistent 1.0 AppStatePersistent.qml
+TestApplication 1.0 TestApplication.qml

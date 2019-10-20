@@ -20,9 +20,14 @@ int main(int argc, char *argv[])
     parser.setApplicationDescription("Hot Reload Server");
     QCommandLineOption helpOption = parser.addHelpOption();
     QCommandLineOption versionOption = parser.addVersionOption();
-    parser.addPositionalArgument("watchdir", QCoreApplication::translate("main", "Directory to watch for changes. Usualy your qml root dir."));
-    parser.addPositionalArgument("startscript", QCoreApplication::translate("main", "Optional root Qml file, relative to <watchdir>. If no script is given only the server is started. Note: Use the Hot Reload Server Qml Template for this file."));
-    QCommandLineOption skip({{"skip","s"}, "Directories that should not be watched, seperated by ';'", "dirs"});
+    parser.addPositionalArgument("watchdir", QCoreApplication::translate("main",
+                   "Directory to watch for changes. Usualy your qml root dir."));
+    parser.addPositionalArgument("startscript", QCoreApplication::translate("main",
+                   "Optional root Qml file, relative to <watchdir>. If no script is "
+                   "given only the server is started. Note: Use the Hot Reload "
+                   "Server Qml Template for this file."));
+    QCommandLineOption skip({{"skip","s"}, "Directories that should not be watched, "
+                   "seperated by ';'", "dirs"});
     parser.addOption(skip);
     parser.process(a);
 
@@ -40,15 +45,22 @@ int main(int argc, char *argv[])
     if(parser.isSet(skip)) {
         skipDirs = parser.value(skip).split(";");
     }
-    StatefulHotReloadServer server(dir, skipDirs);
-    QQmlApplicationEngine *engine;
 
+    // StatefulHotReloadServer should be part of your C++
+    // Application (during development)and watch the Qml dir
+    StatefulHotReloadServer server(dir, skipDirs);
+
+    // This should be part of your C++ Application
+    // if you want to cache the last version that was reloaded
+    // or if you want to roll out (UI-, Qml-) updates using
+    // this mechanism. Cache is stored at
+    // QStandardPaths::AppLocalDataLocation
     LocalApplicationCacheFactory cacheFactory;
     if(parser.positionalArguments().length() >= 2) {
         QString startScript = parser.positionalArguments().at(1);
         QDir path(dir);
         startScript = path.filePath(startScript);
-        engine = new QQmlApplicationEngine( &a );
+        QQmlApplicationEngine *engine = new QQmlApplicationEngine( &a );
         engine->setNetworkAccessManagerFactory(&cacheFactory);
 
         //engine->addImportPath(QDir::currentPath()+"/hotlivereload");

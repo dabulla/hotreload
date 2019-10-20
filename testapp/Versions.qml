@@ -1,8 +1,11 @@
 import QtQuick 2.0
 
 // Here all public versions are listed
+// There must be an item with the property "publicChannels"
+// Each Channel has a Name and the current version
+// Each version has protocol, host, folder, rootFile set which is enough to feed HotLiveReloader
 Item {
-    property var publicTags: [tagStable, tagBeta, tagPublic]
+    property var publicChannels: [tagStable, tagBeta, tagPublic]
     Item {
         id: priv
         property string host: "127.0.0.1"
@@ -30,8 +33,9 @@ Item {
         property string versionName: "v1.0.0"
         property string protocol: "http://"
         property string host: priv.host
-        property string folder: ""
-        property string rootFile: "v100/TestApplication.qml"
+        property string port: "8080"
+        property string folder: "v100"
+        property string rootFile: "TestApplication.qml"
         property var changeLog: [
             "Initial Version"
         ]
@@ -42,8 +46,9 @@ Item {
         property string versionName: "v1.0.1"
         property string protocol: "http://"
         property string host: priv.host
+        property string port: "8080"
         property string folder: ""
-        property string rootFile: "v100/TestApplication.qml"
+        property string rootFile: "TestApplication.qml"
         property var changeLog: [
             "minorUpdate"
         ]
@@ -54,8 +59,9 @@ Item {
         property string versionName: "v2.3.1"
         property string protocol: "http://"
         property string host: priv.host
-        property string folder: ""
-        property string rootFile: "v100/TestApplication.qml"
+        property string port: "8080"
+        property string folder: "betachannel_version"
+        property string rootFile: "TestApplication.qml"
         property var changeLog: [
             "major big update"
         ]
@@ -64,8 +70,9 @@ Item {
         id: verPublic
         property int versionNumber: 50
         property string versionName: "public"
-        property string protocol: "https://"
+        property string protocol: "http://"
         property string host: "raw.githubusercontent.com"
+        //property string port: "443"
         property string folder: "dabulla/hotreload/master/testapp/"
         property string rootFile: "TestApplication.qml"
         property var changeLog: [

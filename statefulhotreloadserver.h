@@ -161,14 +161,23 @@ public:
                 QObject::connect(socket, &QTcpSocket::readyRead, [socket, this](){
                     QString requestedPath;
                     char webBrowserRXData[3000];
-                    QRegExp regexp("GET (/?v(\\d+)/)?(.*) HTTP/.*");
+                    QRegExp regexpGet("GET (.*) HTTP/.*");
                     while(0 < socket->readLine(webBrowserRXData, 3000)) {
-                        int pos = regexp.indexIn(webBrowserRXData);
-                        //qDebug() << ":" << webBrowerRXData;
+                        int pos = regexpGet.indexIn(webBrowserRXData);
                         if (pos > -1) {
-                            QFileInfo fileInfo(m_currentDirectoryInfo.filePath() + "/" + regexp.cap(3));
-                            qDebug() << "requested version:" << regexp.cap(2) << "path:" << regexp.cap(3) << "(" << fileInfo.filePath() << ")";
-                            requestedPath = regexp.cap(3);
+                            QRegExp regexp("GET (/?v(\\d+)/)?(.*) HTTP/.*");
+                            int pos = regexp.indexIn(webBrowserRXData);
+                            if (pos > -1) {
+                                QFileInfo fileInfo(m_currentDirectoryInfo.filePath() + "/" + regexp.cap(3));
+                                qDebug() << "requested version:" << regexp.cap(2) << "path:" << regexp.cap(3) << "(" << fileInfo.filePath() << ")";
+                                requestedPath = regexp.cap(3);
+                                break;
+                            } else {
+                                QFileInfo fileInfo(m_currentDirectoryInfo.filePath() + "/" + regexp.cap(1));
+                                qDebug() << "requested static content: patch" << regexpGet.cap(1) << "(" << fileInfo.filePath() << ")";
+                                requestedPath = regexp.cap(1);
+                                break;
+                            }
                         }
                     }
 

@@ -2,18 +2,58 @@ import QtQuick 2.10
 import QtWebSockets 1.0
 
 Item {
+    enum ReloadMode {
+        Static,             //< Load Qml Element inline (fallback)
+        Offline,            //< Use last seen version (cached, local)
+        CheckForUpdates,    //< Check for new versions and cache
+        LiveReload          //< Connect to url and reaload everytime a websocket signal is received (developer mode)
+    }
+
     id: root
+    // url to versions file with host
+    property string versionsUrl: "http://127.0.0.1:" + httpPort
+    property string httpPortFallback: "8080"
+    property string httpPort: "8080"
+    // just to store live reload channel
     property string rootFile: "app.qml"
     property alias delay: reloadDoNotFreezeTimer.interval
     readonly property alias status: liveReload.status
     property string host: "127.0.0.1"
+    // folder will only be set for specific versions without liveReload
     property string folder: ""
-    property bool enableLiveReload: true
+    property int operationMode: HotLiveReloader.ReloadMode.LiveReload
     property bool enableReload: true
     property Component fallback
     property int port: 8081
     property string protocol: "http://"
-    property var versions: []
+    readonly property var channels: priv.channels
+    readonly property var channelByName: priv.channelsByName
+    property string currentChannel
+    onCurrentChannelChanged: switchToChannel(currentChannel)
+    Item {
+        id: priv
+        property var channels: ([])
+        property var channelsByName: ({})
+    }
+    function switchToLiveReload() {
+        operationMode = HotLiveReloader.ReloadMode.LiveReload
+    }
+
+    function switchToChannel(name) {
+        let version = priv.channelsByName[name];
+        if(typeof version === "undefined") {
+            console.log("Unknown Channel could not be loaded: " + name);
+            return;
+        }
+        operationMode = HotLiveReloader.ReloadMode.CheckForUpdates
+        protocol = version.protocol
+        host     = version.host
+        folder   = version.folder
+        rootFile = version.rootFile
+        httpPortFallback = ((typeof version.port !== "undefined")? version.port : "")
+        currentChannel = name;
+    }
+
     Timer {
         // sometimes the app freezed during reload.
         // This timer prevents the issue and leaves some time for
@@ -26,7 +66,7 @@ Item {
         }
         function syncLiveReload(reloadUrl) {
             liveReloadRoot.active = false;
-            if(root.enableLiveReload || root.enableReload)
+            if(root.operationMode !== HotLiveReloader.ReloadMode.Static)
                 liveReloadRoot.source = reloadUrl
             else
                 liveReloadRoot.sourceComponent = root.fallback
@@ -38,10 +78,11 @@ Item {
         // the URL changes and triggers a reload via bindings
         // from Loader "liveReloadRoot" to rootUrl
         id: liveReload
-        active: root.enableLiveReload || root.enableReload
+        property bool enableLiveReload: root.operationMode === HotLiveReloader.ReloadMode.LiveReload
+        active: root.operationMode === HotLiveReloader.ReloadMode.CheckForUpdates || enableLiveReload
         url: "ws://"+ root.host + ":" + root.port
         property string versionPath//: "v0"
-        property string rootUrl: "cached" + root.protocol + root.host + (root.enableLiveReload ? versionPath : "") + "/" + root.folder
+        property string rootUrl: "cached" + root.protocol + root.host + (enableLiveReload ? versionPath : (root.httpPortFallback === "" ? "" : (":" + root.httpPortFallback))) + "/" + (enableLiveReload ? "" : root.folder) + "/"
         onTextMessageReceived: {
             console.log("Reloading from url: " + message)
             versionPath = message
@@ -57,16 +98,20 @@ Item {
     }
     Loader {
         id: versionsLoader
-        property string versionsFile: liveReload.rootUrl + "Versions.qml"
+        property string versionsFile: root.versionsUrl + "/Versions.qml"
         source: versionsFile
         onLoaded: {
             if(versionsLoader.status !== Loader.Ready) return;
             console.log("loaded Versions");
-            var v = ([]);
-            for( var p in item.publicTags) {
-                v.push(item.publicTags[p]);
+            var channels = ([]);
+            var channelsByName = ({});
+            for( var p in item.publicChannels) {
+                let channel = item.publicChannels[p];
+                channels.push(channel);
+                channelsByName[channel.name] = channel.version;
             }
-            root.versions = v;
+            priv.channels = channels;
+            priv.channelsByName = channelsByName;
         }
     }
 
